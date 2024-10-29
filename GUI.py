@@ -6,7 +6,7 @@ class Gui:
         #Create window
         self.window = Tk()
         self.window.title("Click the tuner")
-        self.window.geometry("600x400")
+        self.window.geometry("800x400")
         self.window.resizable(False, False)
         self.window.iconphoto(True, PhotoImage(file="Assets\\Icon.png"))
 
@@ -55,5 +55,22 @@ class Gui:
         self.switchSetupInstructions.pack()
         self.switchInstructionsFrame.pack()
 
-        self.instructionsFrame.pack(side='left', fill='y')
+        
+        #Mouse button and coordinates
+        self.buttonsFrame = Frame(self.window)
+        self.mouseFrame = Frame(self.buttonsFrame)
+        self.mouseButton = Button(self.mouseFrame ,text="mouse setup", width=30, height=3)
+        self.mouseButton.grid(row=0, column=0, columnspan=3)
+        self.mouseXCoordinate = Label(self.mouseFrame, text="X: 000")
+        self.mouseXCoordinate.grid(row=1, column=0)
+        self.mouseYCoordinate = Label(self.mouseFrame, text="Y: 000")
+        self.mouseYCoordinate.grid(row=1, column=2)
+
+        #MIDI Button
+        self.midiButton = Button(self.buttonsFrame, text="Assign Switch", width=30, height=3)
+
+        self.instructionsFrame.grid(row=0, column=0)
+        self.buttonsFrame.grid(row=0, column=1)
+        self.mouseFrame.grid(row=0, column=0, padx=80, pady=25)
+        self.midiButton.grid(row=1, column=0, pady=25)
         self.window.mainloop()  # Start the main event loop
