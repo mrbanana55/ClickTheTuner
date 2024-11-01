@@ -1,4 +1,6 @@
 from tkinter import *
+import threading
+import mido
 
 INSTRUCTIONS_BACKGROUND = "#0697c7"
 INSTRUCTIONS_FORECOLOR = "#ffffff"
@@ -15,6 +17,7 @@ class Gui:
         self.window.resizable(False, False)
         self.window.iconphoto(True, PhotoImage(file="Assets\\Icon.png"))
         self.tracking = False
+        self.alert_window = None 
 
         # Create a frame for the instructions
         self.instructionsFrame = Frame(self.window, bg=INSTRUCTIONS_BACKGROUND, pady=80)
@@ -66,7 +69,7 @@ class Gui:
         self.mouseYCoordinate.grid(row=1, column=2)
 
         # MIDI Button
-        self.midiButton = Button(self.buttonsFrame, text="Assign Switch", width=30, height=3)
+        self.midiButton = Button(self.buttonsFrame, text="Assign Switch", width=30, height=3,  command=self.show_alert)
 
         self.instructionsFrame.grid(row=0, column=0)
         self.buttonsFrame.grid(row=0, column=1)
@@ -78,6 +81,53 @@ class Gui:
 
         self.window.mainloop()  # Start the main event loop
     
+    def show_alert(self):
+        """Show alert and start listening for MIDI CC note."""
+        # Create the alert window
+        self.alert_window = Toplevel(self.window)
+        self.alert_window.title("MIDI Switch Setup")
+        self.alert_window.geometry("300x100")  # Set window size
+        self.alert_window.transient(self.window)
+        self.alert_window.grab_set()  # Make the alert modal
+
+        # Calculate the center position
+        screen_width = self.window.winfo_screenwidth()
+        screen_height = self.window.winfo_screenheight()
+        window_width = 300
+        window_height = 100
+        x_position = (screen_width // 2) - (window_width // 2)
+        y_position = (screen_height // 2) - (window_height // 2)
+        self.alert_window.geometry(f"{window_width}x{window_height}+{x_position}+{y_position}")
+
+        # Add the message to the alert
+        Label(self.alert_window, text="Waiting for a switch to be pressed...", font=("Arial", 12)).pack(pady=20)
+
+        # Start a separate thread to listen for MIDI messages
+        midi_thread = threading.Thread(target=self.listen_for_midi_cc)
+        midi_thread.start()
+
+    def listen_for_midi_cc(self):
+        """Listen for MIDI CC messages and close the alert when one is detected."""
+        try:
+            # Open MIDI input port
+            with mido.open_input() as port:
+                for message in port:
+                    if message.type == 'control_change':
+                        # Detected MIDI CC message; save and close the alert
+                        self.cc = message.control
+                        self.update_cc_in_file()
+                        self.alert_window.destroy()  # Close alert
+                        break
+        except Exception as e:
+            print("Error with MIDI input:", e)
+
+    def update_cc_in_file(self):
+        """Save the CC value to the configuration file."""
+        with open("config.txt", "w") as file:
+            file.write(f"x = {self.x}\n")
+            file.write(f"y = {self.y}\n")
+            file.write(f"cc = {self.cc}\n")
+
     def read_coordinates_from_file(self):
         """Read initial x, y, and cc values from the config file."""
         try:
